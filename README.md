@@ -1,2 +1,3 @@
-# the-line
+# The Line
+
 Simple extendable line counter
