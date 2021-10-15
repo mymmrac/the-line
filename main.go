@@ -16,14 +16,19 @@ func main() {
 	recursive := flag.Bool("r", false, "Recursively search in dirs matched by pattern")
 	flag.Parse()
 
-	if len(flag.Args()) != 1 {
-		exitWithPrint("Please enter pattern as argument")
+	if len(flag.Args()) < 1 {
+		exitWithPrint("Please enter pattern(s) as arguments")
 	}
-	pattern := flag.Args()[0]
+	patterns := flag.Args()
 
-	paths, err := filepath.Glob(pattern)
-	if err != nil {
-		exitWithPrint("Pattern:", err)
+	var paths []string
+	var err error
+	for _, pattern := range patterns {
+		onePatternPaths, err := filepath.Glob(pattern)
+		if err != nil {
+			exitWithPrint("Pattern:", err)
+		}
+		paths = append(paths, onePatternPaths...)
 	}
 
 	filePaths, err := parsePaths(paths, *recursive)
@@ -37,7 +42,7 @@ func main() {
 	}
 
 	fmt.Println("File count:", len(textFilesPaths))
-	fmt.Println("Skipped filePaths:", len(filePaths)-len(textFilesPaths))
+	fmt.Println("Skipped files:", len(filePaths)-len(textFilesPaths))
 
 	for _, path := range textFilesPaths {
 		lc, err := parseFile(path)
