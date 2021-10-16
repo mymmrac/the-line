@@ -5,22 +5,15 @@ import (
 	"regexp"
 )
 
-type filterer interface {
-	filter(line string) bool
-}
-
-type modifier interface {
-	modify(line string) string
-}
-
 type rule struct {
-	name       string
-	pathFormat *regexp.Regexp
-	modifiers  []modifier
-	filters    []filterer
+	PathFormat *regexp.Regexp `json:"path_format"`
+	Modifiers  []modifier     `json:"modifiers"`
+	Filters    []filterer     `json:"filters"`
 }
 
-func newRule(name, pathFormat string, modifiers []modifier, filters []filterer) (*rule, error) {
+type rules map[string]*rule
+
+func newRule(pathFormat string, modifiers []modifier, filters []filterer) (*rule, error) {
 	reg, err := regexp.Compile(pathFormat)
 	if err != nil {
 		return nil, fmt.Errorf("file format: %w", err)
@@ -35,24 +28,23 @@ func newRule(name, pathFormat string, modifiers []modifier, filters []filterer) 
 	}
 
 	return &rule{
-		name:       name,
-		pathFormat: reg,
-		modifiers:  modifiers,
-		filters:    filters,
+		PathFormat: reg,
+		Modifiers:  modifiers,
+		Filters:    filters,
 	}, nil
 }
 
 func (r *rule) checkPath(filename string) bool {
-	return r.pathFormat.MatchString(filename)
+	return r.PathFormat.MatchString(filename)
 }
 
 func (r *rule) checkLine(line string) bool {
-	for _, m := range r.modifiers {
+	for _, m := range r.Modifiers {
 		line = m.modify(line)
 	}
 
 	ok := true
-	for _, f := range r.filters {
+	for _, f := range r.Filters {
 		if !f.filter(line) {
 			ok = false
 			break

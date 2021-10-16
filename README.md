@@ -12,6 +12,8 @@ List of supported features (or TBD features)
 - [ ] Contains
 - [ ] Length
 - [ ] Regexp
+- [ ] Blank
+- [ ] Any
 
 ### Modifiers:
 
