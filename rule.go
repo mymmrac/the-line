@@ -26,7 +26,7 @@ func newRule(name, pathFormat string, modifiers []modifier, filters []filterer) 
 		return nil, fmt.Errorf("file format: %w", err)
 	}
 
-	if filters == nil || len(filters) == 0 {
+	if len(filters) == 0 {
 		return nil, fmt.Errorf("at list one filter must be specified")
 	}
 

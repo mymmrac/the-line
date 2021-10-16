@@ -6,19 +6,19 @@ Simple extendable line counter
 
 List of supported features (or TBD features)
 
-### Filter by:
+### Filters:
 
 - [ ] Match
 - [ ] Contains
 - [ ] Length
 - [ ] Regexp
 
-### Functions:
+### Modifiers:
 
 - [ ] Trim spaces/prefix/suffix
 - [ ] To lower
 
-### Config:
+### Configs:
 
 - [ ] Embedded
 - [ ] JSON
