@@ -7,9 +7,6 @@ lint:
 	golangci-lint run
 
 build:
-	go build -o bin/tl main.go
+	go build -o bin/tl .
 
-run:
-	go run main.go
-
-.PHONY: lint-install lint build run
+.PHONY: lint-install lint build

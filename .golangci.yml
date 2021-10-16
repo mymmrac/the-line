@@ -181,6 +181,9 @@ issues:
         -   linters:
                 - lll
             source: "^//go:generate "
+        -   linters:
+                - staticcheck
+            text: "SA4005: ineffective assignment to field"
 
     # Independently of option `exclude` we use default exclude patterns,
     # it can be disabled by this option. To list all
