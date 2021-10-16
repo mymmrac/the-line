@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -11,61 +12,75 @@ type filterer interface {
 
 type anyFilter struct{}
 
-func (f anyFilter) filter(_ string) bool {
+func (f *anyFilter) filter(_ string) bool {
 	return true
 }
 
 type blankFilter struct{}
 
-func (f blankFilter) filter(line string) bool {
+func (f *blankFilter) filter(line string) bool {
 	return line == ""
 }
 
 type matchFilter struct {
-	Line string
+	Line string `yaml:"line"`
 }
 
-func (f matchFilter) filter(line string) bool {
+func (f *matchFilter) filter(line string) bool {
 	return line == f.Line
 }
 
 type containsFilter struct {
-	Line string
+	Line string `yaml:"line"`
 }
 
-func (f containsFilter) filter(line string) bool {
+func (f *containsFilter) filter(line string) bool {
 	return strings.Contains(line, f.Line)
 }
 
 type lengthFilter struct {
-	Length int
+	Length int `yaml:"length"`
 }
 
-func (f lengthFilter) filter(line string) bool {
+func (f *lengthFilter) filter(line string) bool {
 	return len(line) == f.Length
 }
 
 type regexpFilter struct {
-	Reg *regexp.Regexp
+	Reg *regexp.Regexp `yaml:"pattern"`
 }
 
-func (f regexpFilter) filter(line string) bool {
+func (f *regexpFilter) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	type fu struct {
+		Pattern string `yaml:"pattern"`
+	}
+	u := fu{}
+
+	err := unmarshal(&u)
+	if err != nil {
+		return err
+	}
+	f.Reg, err = regexp.Compile(u.Pattern)
+	return err
+}
+
+func (f *regexpFilter) filter(line string) bool {
 	return f.Reg.MatchString(line)
 }
 
-type multiLineFilter struct {
-	startFilter filterer
-	endFilter   filterer
-	matching    bool
+type multilineFilter struct {
+	StartFilter filterer `yaml:"start-filter"`
+	EndFilter   filterer `yaml:"end-filter"`
+	matching    bool     `yaml:"-"`
 }
 
-func (f *multiLineFilter) filter(line string) bool {
-	if f.startFilter.filter(line) {
+func (f *multilineFilter) filter(line string) bool {
+	if f.StartFilter.filter(line) {
 		f.matching = true
 		return true
 	}
 
-	if f.endFilter.filter(line) {
+	if f.EndFilter.filter(line) {
 		f.matching = false
 		return true
 	}
@@ -73,20 +88,147 @@ func (f *multiLineFilter) filter(line string) bool {
 	return f.matching
 }
 
-type unionFilter struct {
-	filterA filterer
-	filterB filterer
+func (f *multilineFilter) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	type fu struct {
+		StartFilter imap `yaml:"start-filter"`
+		EndFilter   imap `yaml:"end-filter"`
+	}
+	u := fu{}
+
+	err := unmarshal(&u)
+	if err != nil {
+		return err
+	}
+
+	kind, ok := u.StartFilter["kind"]
+	if !ok {
+		return fmt.Errorf("no kind")
+	}
+	f.StartFilter, err = parseFilter(kind.(string), u.StartFilter)
+	if err != nil {
+		return err
+	}
+
+	kind, ok = u.EndFilter["kind"]
+	if !ok {
+		return fmt.Errorf("no kind")
+	}
+	f.EndFilter, err = parseFilter(kind.(string), u.EndFilter)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (f unionFilter) filter(line string) bool {
-	return f.filterA.filter(line) || f.filterB.filter(line)
+type unionFilter struct {
+	FilterA filterer `yaml:"filter-a"`
+	FilterB filterer `yaml:"filter-b"`
+}
+
+func (f *unionFilter) filter(line string) bool {
+	return f.FilterA.filter(line) || f.FilterB.filter(line)
+}
+
+func (f *unionFilter) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	type fu struct {
+		FilterA imap `yaml:"filter-a"`
+		FilterB imap `yaml:"filter-b"`
+	}
+	u := fu{}
+
+	err := unmarshal(&u)
+	if err != nil {
+		return err
+	}
+
+	kind, ok := u.FilterA["kind"]
+	if !ok {
+		return fmt.Errorf("no kind")
+	}
+	f.FilterA, err = parseFilter(kind.(string), u.FilterA)
+	if err != nil {
+		return err
+	}
+
+	kind, ok = u.FilterB["kind"]
+	if !ok {
+		return fmt.Errorf("no kind")
+	}
+	f.FilterB, err = parseFilter(kind.(string), u.FilterB)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type intersectionFilter struct {
-	filterA filterer
-	filterB filterer
+	FilterA filterer `yaml:"filter-a"`
+	FilterB filterer `yaml:"filter-b"`
 }
 
-func (f intersectionFilter) filter(line string) bool {
-	return f.filterA.filter(line) && f.filterB.filter(line)
+func (f *intersectionFilter) filter(line string) bool {
+	return f.FilterA.filter(line) && f.FilterB.filter(line)
+}
+
+func (f *intersectionFilter) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	type fu struct {
+		FilterA imap `yaml:"filter-a"`
+		FilterB imap `yaml:"filter-b"`
+	}
+	u := fu{}
+
+	err := unmarshal(&u)
+	if err != nil {
+		return err
+	}
+
+	kind, ok := u.FilterA["kind"]
+	if !ok {
+		return fmt.Errorf("no kind")
+	}
+	f.FilterA, err = parseFilter(kind.(string), u.FilterA)
+	if err != nil {
+		return err
+	}
+
+	kind, ok = u.FilterB["kind"]
+	if !ok {
+		return fmt.Errorf("no kind")
+	}
+	f.FilterB, err = parseFilter(kind.(string), u.FilterB)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type notFilter struct {
+	Filter filterer `yaml:"filter"`
+}
+
+func (f *notFilter) filter(line string) bool {
+	return !f.filter(line)
+}
+
+func (f *notFilter) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	type fu struct {
+		Filter imap `yaml:"filter"`
+	}
+	u := fu{}
+
+	err := unmarshal(&u)
+	if err != nil {
+		return err
+	}
+
+	kind, ok := u.Filter["kind"]
+	if !ok {
+		return fmt.Errorf("no kind")
+	}
+	f.Filter, err = parseFilter(kind.(string), u.Filter)
+
+	return err
 }

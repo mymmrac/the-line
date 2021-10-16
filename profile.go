@@ -6,8 +6,26 @@ import (
 )
 
 type profile struct {
-	PathFormat *regexp.Regexp `json:"path_format"`
-	Rules      rules          `json:"rules"`
+	PathFormat *regexp.Regexp `yaml:"path-format"`
+	Rules      rules          `yaml:"rules"`
+}
+
+func (p *profile) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	type profileUnmarshal struct {
+		PathFormat string `yaml:"path-format"`
+		Rules      rules  `yaml:"rules"`
+	}
+
+	u := profileUnmarshal{}
+	err := unmarshal(&u)
+	if err != nil {
+		return err
+	}
+
+	p.Rules = u.Rules
+
+	p.PathFormat, err = regexp.Compile(u.PathFormat)
+	return err
 }
 
 func (p *profile) checkPath(filename string) bool {

@@ -4,58 +4,28 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"regexp"
 	"strings"
+
+	"gopkg.in/yaml.v2"
 )
 
 type config struct {
-	Profiles profiles `json:"profiles"`
+	Profiles profiles `yaml:"profiles"`
 }
 
-const defaultProfile = "default"
+const defaultProfile = "Default"
 
 const separator = ","
 
 func main() {
 	// Reading configs
-	anyRule, _ := newRule(".+", nil, []filterer{anyFilter{}})
-	blankRule, _ := newRule(".+", nil, []filterer{blankFilter{}})
-	blankTrimmedRule, _ := newRule(".+",
-		[]modifier{trimSpaceModifier{}}, []filterer{blankFilter{}})
-	comment, _ := newRule(".+", []modifier{trimSpaceModifier{}}, []filterer{
-		unionFilter{
-			filterA: &multiLineFilter{
-				startFilter: matchFilter{Line: "/*"},
-				endFilter:   matchFilter{Line: "*/"},
-			},
-			filterB: regexpFilter{Reg: regexp.MustCompile(`^//`)},
-		},
-	})
+	configFile, _ := os.Open("default.yaml")
 
-	conf := config{
-		Profiles: profiles{
-			defaultProfile: {
-				PathFormat: regexp.MustCompile(".+"),
-				Rules: rules{
-					"any":           anyRule,
-					"blank":         blankRule,
-					"blank trimmed": blankTrimmedRule,
-				},
-			},
-			"test": {
-				PathFormat: regexp.MustCompile(`.+\.go`),
-				Rules: rules{
-					"any":     anyRule,
-					"blank":   blankRule,
-					"comment": comment,
-				},
-			},
-		},
+	conf := &config{}
+	err := yaml.NewDecoder(configFile).Decode(conf)
+	if err != nil {
+		exitWithPrint("Config:", err)
 	}
-
-	//data, _ := json.Marshal(conf)
-	//fmt.Println(string(data))
-	//fmt.Println("====")
 
 	// Reading arguments
 	recursive := flag.Bool("r", false, "Recursively search in dirs matched by pattern")

@@ -17,6 +17,7 @@ List of supported features (or TBD features)
 - [ ] Any
 - [ ] Union
 - [ ] Intersection
+- [ ] Not
 
 ### Modifiers:
 
@@ -25,9 +26,8 @@ List of supported features (or TBD features)
 
 ### Configs:
 
-- [ ] Embedded
-- [ ] JSON
-- [ ] YAML
+- [ ] Embedded (default config included in binary)
+- [ ] YAML (user defined config)
 
 ### CLI:
 

@@ -1,6 +1,8 @@
 package main
 
-import "strings"
+import (
+	"strings"
+)
 
 type modifier interface {
 	modify(line string) string
@@ -8,6 +10,6 @@ type modifier interface {
 
 type trimSpaceModifier struct{}
 
-func (t trimSpaceModifier) modify(line string) string {
+func (t *trimSpaceModifier) modify(line string) string {
 	return strings.TrimSpace(line)
 }
