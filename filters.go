@@ -52,3 +52,41 @@ type regexpFilter struct {
 func (f regexpFilter) filter(line string) bool {
 	return f.Reg.MatchString(line)
 }
+
+type multiLineFilter struct {
+	startFilter filterer
+	endFilter   filterer
+	matching    bool
+}
+
+func (f *multiLineFilter) filter(line string) bool {
+	if f.startFilter.filter(line) {
+		f.matching = true
+		return true
+	}
+
+	if f.endFilter.filter(line) {
+		f.matching = false
+		return true
+	}
+
+	return f.matching
+}
+
+type unionFilter struct {
+	filterA filterer
+	filterB filterer
+}
+
+func (f unionFilter) filter(line string) bool {
+	return f.filterA.filter(line) || f.filterB.filter(line)
+}
+
+type intersectionFilter struct {
+	filterA filterer
+	filterB filterer
+}
+
+func (f intersectionFilter) filter(line string) bool {
+	return f.filterA.filter(line) && f.filterB.filter(line)
+}

@@ -9,11 +9,14 @@ List of supported features (or TBD features)
 ### Filters:
 
 - [ ] Match
+- [ ] Prefix/suffix
 - [ ] Contains
 - [ ] Length
 - [ ] Regexp
 - [ ] Blank
 - [ ] Any
+- [ ] Union
+- [ ] Intersection
 
 ### Modifiers:
 

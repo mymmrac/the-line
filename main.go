@@ -22,6 +22,15 @@ func main() {
 	blankRule, _ := newRule(".+", nil, []filterer{blankFilter{}})
 	blankTrimmedRule, _ := newRule(".+",
 		[]modifier{trimSpaceModifier{}}, []filterer{blankFilter{}})
+	comment, _ := newRule(".+", []modifier{trimSpaceModifier{}}, []filterer{
+		unionFilter{
+			filterA: &multiLineFilter{
+				startFilter: matchFilter{Line: "/*"},
+				endFilter:   matchFilter{Line: "*/"},
+			},
+			filterB: regexpFilter{Reg: regexp.MustCompile(`^//`)},
+		},
+	})
 
 	conf := config{
 		Profiles: profiles{
@@ -36,8 +45,9 @@ func main() {
 			"test": {
 				PathFormat: regexp.MustCompile(`.+\.go`),
 				Rules: rules{
-					"any":   anyRule,
-					"blank": blankRule,
+					"any":     anyRule,
+					"blank":   blankRule,
+					"comment": comment,
 				},
 			},
 		},

@@ -1,7 +1,5 @@
 package main
 
-import "fmt"
-
 type lineCounter struct {
 	filename string
 	profiles profiles
@@ -34,18 +32,4 @@ func (l *lineCounter) count(line string) {
 			}
 		}
 	}
-}
-
-func countLines(files []string, profs profiles) (lineCounters, error) {
-	lcs := make(lineCounters, len(files))
-	for i, path := range files {
-		lc, err := parseFile(path, profs)
-		if err != nil {
-			return nil, fmt.Errorf("parsing file: %w", err)
-		}
-
-		lcs[i] = *lc
-	}
-
-	return lcs, nil
 }

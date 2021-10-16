@@ -6,6 +6,20 @@ import (
 	"os"
 )
 
+func countLines(files []string, profs profiles) (lineCounters, error) {
+	lcs := make(lineCounters, len(files))
+	for i, path := range files {
+		lc, err := parseFile(path, profs)
+		if err != nil {
+			return nil, fmt.Errorf("parsing file: %w", err)
+		}
+
+		lcs[i] = *lc
+	}
+
+	return lcs, nil
+}
+
 func parseFile(path string, profs profiles) (*lineCounter, error) {
 	//nolint:gosec
 	file, err := os.Open(path)
