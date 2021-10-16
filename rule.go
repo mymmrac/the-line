@@ -71,7 +71,7 @@ func parseFilter(kind string, value imap) (filterer, error) {
 		}
 		f = m
 	case "not":
-		m := &intersectionFilter{}
+		m := &notFilter{}
 		bytes, _ := yaml.Marshal(value)
 		if err := yaml.Unmarshal(bytes, m); err != nil {
 			return nil, err

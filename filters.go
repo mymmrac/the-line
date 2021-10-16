@@ -210,7 +210,7 @@ type notFilter struct {
 }
 
 func (f *notFilter) filter(line string) bool {
-	return !f.filter(line)
+	return !f.Filter.filter(line)
 }
 
 func (f *notFilter) UnmarshalYAML(unmarshal func(interface{}) error) error {

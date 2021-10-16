@@ -4,52 +4,51 @@ profiles:
         rules:
             new-line:
                 path-format: .+
-                modifiers: []
+                modifiers: [ ]
                 filters:
-                    - kind: any
+                    -   kind: any
             blank:
                 path-format: .+
                 modifiers:
-                    - kind: trim-spaces
+                    -   kind: trim-spaces
                 filters:
-                    - kind: blank
+                    -   kind: blank
 
     Go:
         path-format: ".+\\.go"
         rules:
             comments:
                 path-format: .+
-                modifiers:
-                    - kind: trim-spaces
+                modifiers: &trim-spaces
+                    -   kind: trim-spaces
                 filters:
-                    - kind: union
-                      filter-a:
-                          kind: multiline
-                          start-filter:
-                              kind: contains
-                              line: "/*"
-                          end-filter:
-                              kind: contains
-                              line: "*/"
-                      filter-b:
-                          kind: regexp
-                          pattern: "^//"
+                    - &comment
+                        kind: union
+                        filter-a: &multiline-comment
+                            kind: multiline
+                            start-filter:
+                                kind: contains
+                                line: "/*"
+                            end-filter:
+                                kind: contains
+                                line: "*/"
+                        filter-b: &one-line-comment
+                            kind: regexp
+                            pattern: "^//"
             one-line-comments:
                 path-format: .+
-                modifiers:
-                    - kind: trim-spaces
+                modifiers: *trim-spaces
                 filters:
-                    - kind: regexp
-                      pattern: "^//"
+                    - *one-line-comment
             multiline-comments:
                 path-format: .+
-                modifiers:
-                    - kind: trim-spaces
+                modifiers: *trim-spaces
                 filters:
-                    - kind: multiline
-                      start-filter:
-                          kind: contains
-                          line: "/*"
-                      end-filter:
-                          kind: contains
-                          line: "*/"
+                    - *multiline-comment
+            code:
+                path-format: .+
+                modifiers: *trim-spaces
+                filters:
+                    -   kind: not
+                        filter:
+                          *comment
