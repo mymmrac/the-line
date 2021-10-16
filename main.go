@@ -25,22 +25,30 @@ func main() {
 		exitWithPrint("Parse file info:", err)
 	}
 
-	textFilesPaths, err := filterTextFiles(filePaths)
+	textFilePaths, err := filterTextFiles(filePaths)
 	if err != nil {
 		exitWithPrint("Failed to filter text files:", err)
 	}
 
-	fmt.Println("File count:", len(textFilesPaths))
-	fmt.Println("Skipped files:", len(filePaths)-len(textFilesPaths))
+	usedFiles := len(textFilePaths)
+	skippedFiles := len(filePaths) - usedFiles
 
-	for _, path := range textFilesPaths {
-		lc, err := parseFile(path)
-		if err != nil {
-			exitWithPrint("Reading file:", err)
-		}
+	fmt.Println("Used files:", usedFiles)
+	fmt.Println("Skipped files:", skippedFiles)
+	fmt.Println()
 
-		fmt.Println(lc.Any, lc.Blank)
+	counters, err := countLines(textFilePaths)
+	if err != nil {
+		exitWithPrint("Counting lines:", err)
 	}
+
+	for _, counter := range counters {
+		fmt.Println(counter.filename)
+		fmt.Println(counter.matched)
+		fmt.Println()
+	}
+
+	// TODO: Add sum of all
 }
 
 func exitWithPrint(args ...interface{}) {

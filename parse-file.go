@@ -4,7 +4,26 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strings"
 )
+
+type anyFilter struct{}
+
+func (f anyFilter) filter(_ string) bool {
+	return true
+}
+
+type blankFilter struct{}
+
+func (f blankFilter) filter(line string) bool {
+	return line == ""
+}
+
+type trimSpaceModifier struct{}
+
+func (t trimSpaceModifier) modify(line string) string {
+	return strings.TrimSpace(line)
+}
 
 func parseFile(path string) (*lineCounter, error) {
 	//nolint:gosec
@@ -13,7 +32,12 @@ func parseFile(path string) (*lineCounter, error) {
 		return nil, fmt.Errorf("open file: %w", err)
 	}
 
-	lc := &lineCounter{}
+	anyRule, _ := newRule("any", ".+", nil, []filterer{anyFilter{}})
+	blankRule, _ := newRule("blank", ".+", nil, []filterer{blankFilter{}})
+	blankTrimmedRule, _ := newRule("blank trimmed", ".+",
+		[]modifier{trimSpaceModifier{}}, []filterer{blankFilter{}})
+
+	lc := newLineCounter(path, []*rule{anyRule, blankRule, blankTrimmedRule})
 
 	sc := bufio.NewScanner(file)
 	for sc.Scan() {

@@ -1,16 +1,41 @@
 package main
 
-import "strings"
+import "fmt"
 
 type lineCounter struct {
-	Any   int
-	Blank int
+	filename string
+	rules    []*rule
+	matched  map[string]int
 }
 
-func (l lineCounter) count(line string) {
-	l.Any++
+type lineCounters []lineCounter
 
-	if strings.TrimSpace(line) == "" {
-		l.Blank++
+func newLineCounter(filename string, rules []*rule) *lineCounter {
+	return &lineCounter{
+		filename: filename,
+		rules:    rules,
+		matched:  make(map[string]int),
 	}
+}
+
+func (l *lineCounter) count(line string) {
+	for _, r := range l.rules {
+		if r.checkPath(l.filename) && r.checkLine(line) {
+			l.matched[r.name]++
+		}
+	}
+}
+
+func countLines(files []string) (lineCounters, error) {
+	lcs := make(lineCounters, len(files))
+	for i, path := range files {
+		lc, err := parseFile(path)
+		if err != nil {
+			return nil, fmt.Errorf("parsing file: %w", err)
+		}
+
+		lcs[i] = *lc
+	}
+
+	return lcs, nil
 }
