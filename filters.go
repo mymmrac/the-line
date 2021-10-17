@@ -38,6 +38,22 @@ func (f *containsFilter) filter(line string) bool {
 	return strings.Contains(line, f.Line)
 }
 
+type prefixFilter struct {
+	Prefix string `yaml:"prefix"`
+}
+
+func (p *prefixFilter) filter(line string) bool {
+	return strings.HasPrefix(line, p.Prefix)
+}
+
+type suffixFilter struct {
+	Suffix string `yaml:"suffix"`
+}
+
+func (s *suffixFilter) filter(line string) bool {
+	return strings.HasSuffix(line, s.Suffix)
+}
+
 type lengthFilter struct {
 	Length int `yaml:"length"`
 }

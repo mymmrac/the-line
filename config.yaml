@@ -13,3 +13,7 @@ profiles:
                 filters:
                     -   kind: contains
                         line: 'if '
+                    -   kind: prefix
+                        prefix: 'Hello'
+                    -   kind: suffix
+                        suffix: 'World'

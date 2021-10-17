@@ -37,6 +37,20 @@ func parseFilter(kind string, value imap) (filterer, error) {
 			return nil, err
 		}
 		f = m
+	case "prefix":
+		m := &prefixFilter{}
+		bytes, _ := yaml.Marshal(value)
+		if err := yaml.Unmarshal(bytes, m); err != nil {
+			return nil, err
+		}
+		f = m
+	case "suffix":
+		m := &suffixFilter{}
+		bytes, _ := yaml.Marshal(value)
+		if err := yaml.Unmarshal(bytes, m); err != nil {
+			return nil, err
+		}
+		f = m
 	case "length":
 		m := &lengthFilter{}
 		bytes, _ := yaml.Marshal(value)

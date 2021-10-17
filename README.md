@@ -9,7 +9,7 @@ List of supported features (or TBD features)
 ### Filters:
 
 - [X] Match
-- [ ] Prefix/suffix
+- [X] Prefix/suffix
 - [X] Contains
 - [X] Length
 - [X] Regexp
