@@ -99,30 +99,6 @@ func main() {
 	displayCounts(usedFiles, skippedFiles, counters)
 }
 
-func displayCounts(usedFiles, skippedFiles int, counters lineCounters) {
-	fmt.Println("Used files:", usedFiles)
-	fmt.Println("Skipped files:", skippedFiles)
-	fmt.Println()
-
-	for _, counter := range counters {
-		fmt.Println(counter.filename)
-		for profName, ruleMatch := range counter.matched {
-			rulesRow := "          "
-			profRow := profName + ": "
-			for ruleName, count := range ruleMatch {
-				rulesRow += ruleName + "   "
-				profRow += fmt.Sprintf(" %d ", count)
-			}
-
-			fmt.Println(rulesRow)
-			fmt.Println(profRow)
-		}
-		fmt.Println()
-	}
-
-	// TODO: Add sum of all
-}
-
 func exitWithPrint(args ...interface{}) {
 	fmt.Println(args...)
 	os.Exit(1)
