@@ -1,0 +1,10 @@
+profiles:
+    test:
+        path-format: ".+"
+        rules:
+            if:
+                path-format: '.+\.go'
+                modifiers: [ ]
+                filters:
+                    -   kind: contains
+                        line: "if "

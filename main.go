@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"flag"
 	"fmt"
 	"os"
@@ -13,23 +14,27 @@ type config struct {
 	Profiles profiles `yaml:"profiles"`
 }
 
-const defaultProfile = "Default"
+const defaultProfile = "default"
 
 const separator = ","
 
-func main() {
-	// Reading configs
-	configFile, _ := os.Open("default.yaml")
+//go:embed default.yaml
+var defaultConfigBytes []byte
 
+func main() {
+	// Reading embedded config
 	conf := &config{}
-	err := yaml.NewDecoder(configFile).Decode(conf)
+	err := yaml.Unmarshal(defaultConfigBytes, conf)
 	if err != nil {
-		exitWithPrint("Config:", err)
+		exitWithPrint("Embedded config:", err)
 	}
 
 	// Reading arguments
-	recursive := flag.Bool("r", false, "Recursively search in dirs matched by pattern")
-	profNameFlag := flag.String("p", "", "Profiles to use")
+	// TODO: Add arguments validation
+
+	recursiveFlag := flag.Bool("r", false, "Recursively search in dirs matched by pattern")
+	profNamesFlag := flag.String("p", "", "Profiles to use")
+	configFileFlag := flag.String("c", "", "User defined config file")
 
 	flag.Parse()
 
@@ -37,13 +42,8 @@ func main() {
 		defaultProfile,
 	}
 
-	if len(*profNameFlag) > 0 {
-		profileNames = strings.Split(*profNameFlag, separator)
-	}
-
-	profs, err := conf.Profiles.filter(profileNames)
-	if err != nil {
-		exitWithPrint("Getting profiles:", err)
+	if len(*profNamesFlag) > 0 {
+		profileNames = strings.Split(*profNamesFlag, separator)
 	}
 
 	if len(flag.Args()) < 1 {
@@ -51,13 +51,33 @@ func main() {
 	}
 	patterns := flag.Args()
 
+	// Reading user config
+	if *configFileFlag != "" {
+		var configFile *os.File
+		configFile, err = os.Open(*configFileFlag)
+		if err != nil {
+			exitWithPrint("Reading user config:", err)
+		}
+
+		err = yaml.NewDecoder(configFile).Decode(conf)
+		if err != nil {
+			exitWithPrint("User config:", err)
+		}
+	}
+
+	// Processing configs
+	profs, err := conf.Profiles.filter(profileNames)
+	if err != nil {
+		exitWithPrint("Getting profiles:", err)
+	}
+
 	// Processing files
 	paths, err := parsePatterns(patterns)
 	if err != nil {
 		exitWithPrint("Pattern(s):", err)
 	}
 
-	filePaths, err := parsePaths(paths, *recursive)
+	filePaths, err := parsePaths(paths, *recursiveFlag)
 	if err != nil {
 		exitWithPrint("Parse file info:", err)
 	}

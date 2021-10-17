@@ -1,24 +1,26 @@
 profiles:
-    Default:
-        path-format: .+
+    default:
+        path-format: '.+'
         rules:
-            new-line:
-                path-format: .+
+            new-line: &new-line
+                path-format: '.+'
                 modifiers: [ ]
                 filters:
                     -   kind: any
-            blank:
-                path-format: .+
+            blank: &blank
+                path-format: '.+'
                 modifiers:
                     -   kind: trim-spaces
                 filters:
                     -   kind: blank
 
-    Go:
-        path-format: ".+\\.go"
+    go:
+        path-format: '.+\.go'
         rules:
+            new-line: *new-line
+            blank: *blank
             comments:
-                path-format: .+
+                path-format: '.+'
                 modifiers: &trim-spaces
                     -   kind: trim-spaces
                 filters:
@@ -28,27 +30,26 @@ profiles:
                             kind: multiline
                             start-filter:
                                 kind: contains
-                                line: "/*"
+                                line: '/*'
                             end-filter:
                                 kind: contains
-                                line: "*/"
+                                line: '*/'
                         filter-b: &one-line-comment
                             kind: regexp
-                            pattern: "^//"
+                            pattern: '^//'
             one-line-comments:
-                path-format: .+
+                path-format: '.+'
                 modifiers: *trim-spaces
                 filters:
                     - *one-line-comment
             multiline-comments:
-                path-format: .+
+                path-format: '.+'
                 modifiers: *trim-spaces
                 filters:
                     - *multiline-comment
             code:
-                path-format: .+
+                path-format: '.+'
                 modifiers: *trim-spaces
                 filters:
                     -   kind: not
-                        filter:
-                          *comment
+                        filter: *comment
