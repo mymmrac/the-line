@@ -15,7 +15,7 @@ type rule struct {
 
 type imap map[interface{}]interface{}
 
-//nolint:funlen,gocyclo
+//nolint:funlen,gocyclo,gocognit
 func parseFilter(kind string, value imap) (filterer, error) {
 	var f filterer
 	switch kind {
