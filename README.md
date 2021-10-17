@@ -32,4 +32,4 @@ List of supported features (or TBD features)
 ### CLI:
 
 - [ ] Pretty interface using [Charm](https://charm.sh/)
-- [ ] Minimal output
+- [X] Minimal output (regular stdout)
