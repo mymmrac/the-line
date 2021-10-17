@@ -15,7 +15,7 @@ profiles:
                     -   kind: blank
 
     go:
-        path-format: '.+\.go'
+        path-format: '.+\.go$'
         rules:
             new-line: *new-line
             blank: *blank

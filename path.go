@@ -45,6 +45,11 @@ func parsePaths(paths []string, recursive bool) (files []string, err error) {
 		}
 	}
 
+	files, err = absPaths(files)
+	if err != nil {
+		return nil, fmt.Errorf("abs paths: %w", err)
+	}
+
 	return files, nil
 }
 
@@ -64,4 +69,17 @@ func splitFilesAndDirs(paths []string) (files, dirs []string, err error) {
 	}
 
 	return files, dirs, nil
+}
+
+func absPaths(paths []string) ([]string, error) {
+	var err error
+	absP := make([]string, len(paths))
+	for i, p := range paths {
+		absP[i], err = filepath.Abs(p)
+		if err != nil {
+			return nil, fmt.Errorf("path %q: %w", p, err)
+		}
+	}
+
+	return absP, nil
 }
