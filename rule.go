@@ -109,6 +109,22 @@ func (r *rule) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		switch kind {
 		case "trim-spaces":
 			modifiers[i] = &trimSpaceModifier{}
+		case "trim-prefix":
+			um := &trimPrefixModifier{}
+			bytes, _ := yaml.Marshal(m)
+			if err = yaml.Unmarshal(bytes, um); err != nil {
+				return err
+			}
+			modifiers[i] = um
+		case "trim-suffix":
+			um := &trimSuffixModifier{}
+			bytes, _ := yaml.Marshal(m)
+			if err = yaml.Unmarshal(bytes, um); err != nil {
+				return err
+			}
+			modifiers[i] = um
+		case "to-lower":
+			modifiers[i] = &toLowerModifier{}
 		default:
 			return fmt.Errorf("unknown modifier: %q", kind)
 		}

@@ -8,26 +8,26 @@ List of supported features (or TBD features)
 
 ### Filters:
 
-- [ ] Match
+- [X] Match
 - [ ] Prefix/suffix
-- [ ] Contains
-- [ ] Length
-- [ ] Regexp
-- [ ] Blank
-- [ ] Any
-- [ ] Union
-- [ ] Intersection
-- [ ] Not
+- [X] Contains
+- [X] Length
+- [X] Regexp
+- [X] Blank
+- [X] Any
+- [X] Union
+- [X] Intersection
+- [X] Not
 
 ### Modifiers:
 
-- [ ] Trim spaces/prefix/suffix
-- [ ] To lower
+- [X] Trim spaces/prefix/suffix
+- [X] To lower
 
 ### Configs:
 
-- [ ] Embedded (default config included in binary)
-- [ ] YAML (user defined config)
+- [X] Embedded (default config included in binary)
+- [X] YAML (user defined config)
 
 ### CLI:
 

@@ -1,10 +1,15 @@
 profiles:
     test:
-        path-format: ".+"
+        path-format: '.+'
         rules:
             if:
                 path-format: '.+\.go'
-                modifiers: [ ]
+                modifiers:
+                    -   kind: trim-prefix
+                        prefix: 'test 1'
+                    -   kind: trim-suffix
+                        suffix: 'test 2'
+                    -   kind: to-lower
                 filters:
                     -   kind: contains
-                        line: "if "
+                        line: 'if '
