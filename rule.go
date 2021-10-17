@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"regexp"
+
+	"gopkg.in/yaml.v2"
 )
 
 type rule struct {
@@ -14,6 +15,7 @@ type rule struct {
 
 type imap map[interface{}]interface{}
 
+//nolint:funlen,gocyclo
 func parseFilter(kind string, value imap) (filterer, error) {
 	var f filterer
 	switch kind {
