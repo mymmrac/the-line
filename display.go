@@ -45,6 +45,8 @@ type namedProfile struct {
 	ruleMatch map[string]int
 }
 
+const minRuleNameLength = 6
+
 func displayMatched(matched map[string]map[string]int) {
 	i := 0
 	np := make([]namedProfile, len(matched))
@@ -83,8 +85,8 @@ func displayMatched(matched map[string]map[string]int) {
 
 		for l, rn := range rs.rulesNames {
 			r := rn + "  "
-			if len(r) < 6 {
-				r += strings.Repeat(" ", 4-len(r))
+			if len(r) < minRuleNameLength {
+				r += strings.Repeat(" ", minRuleNameLength-len(r))
 			}
 
 			rulesRow += r
