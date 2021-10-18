@@ -7,8 +7,9 @@ import (
 	"path/filepath"
 )
 
-func parsePatterns(patterns []string) (paths []string, err error) {
+func pathsFromPatterns(patterns []string) (paths []string, err error) {
 	var matched []string
+
 	for _, pattern := range patterns {
 		matched, err = filepath.Glob(pattern)
 		if err != nil {
@@ -21,8 +22,8 @@ func parsePatterns(patterns []string) (paths []string, err error) {
 	return paths, nil
 }
 
-func parsePaths(paths []string, recursive bool) (files []string, err error) {
-	files, dirs, err := splitFilesAndDirs(paths)
+func filesFromPaths(paths []string, recursive bool) (files []string, err error) {
+	files, dirs, err := filesAndDirsFromPaths(paths)
 	if err != nil {
 		return nil, fmt.Errorf("split files & dirs: %w", err)
 	}
@@ -37,15 +38,17 @@ func parsePaths(paths []string, recursive bool) (files []string, err error) {
 				if !info.IsDir() {
 					files = append(files, path)
 				}
+
 				return nil
 			})
+
 			if err != nil {
 				return nil, fmt.Errorf("walk: %w", err)
 			}
 		}
 	}
 
-	files, err = absPaths(files)
+	files, err = absPathsFromPaths(files)
 	if err != nil {
 		return nil, fmt.Errorf("abs paths: %w", err)
 	}
@@ -53,8 +56,9 @@ func parsePaths(paths []string, recursive bool) (files []string, err error) {
 	return files, nil
 }
 
-func splitFilesAndDirs(paths []string) (files, dirs []string, err error) {
+func filesAndDirsFromPaths(paths []string) (files, dirs []string, err error) {
 	var fileInfo os.FileInfo
+
 	for _, path := range paths {
 		fileInfo, err = os.Stat(path)
 		if err != nil {
@@ -71,15 +75,15 @@ func splitFilesAndDirs(paths []string) (files, dirs []string, err error) {
 	return files, dirs, nil
 }
 
-func absPaths(paths []string) ([]string, error) {
-	var err error
-	absP := make([]string, len(paths))
+func absPathsFromPaths(paths []string) (absPaths []string, err error) {
+	absPaths = make([]string, len(paths))
+
 	for i, p := range paths {
-		absP[i], err = filepath.Abs(p)
+		absPaths[i], err = filepath.Abs(p)
 		if err != nil {
 			return nil, fmt.Errorf("path %q: %w", p, err)
 		}
 	}
 
-	return absP, nil
+	return absPaths, nil
 }

@@ -7,8 +7,9 @@ import (
 	"golang.org/x/tools/godoc/util"
 )
 
-func filterTextFiles(files []string) (textFiles []string, err error) {
+func textFilesFromFiles(files []string) (textFiles []string, err error) {
 	var isText bool
+
 	for _, file := range files {
 		isText, err = isTextFile(file)
 		if err != nil {
@@ -19,6 +20,7 @@ func filterTextFiles(files []string) (textFiles []string, err error) {
 			textFiles = append(textFiles, file)
 		}
 	}
+
 	return textFiles, nil
 }
 

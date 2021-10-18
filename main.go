@@ -72,17 +72,17 @@ func main() {
 	}
 
 	// Processing files
-	paths, err := parsePatterns(patterns)
+	paths, err := pathsFromPatterns(patterns)
 	if err != nil {
 		exitWithPrint("Pattern(s):", err)
 	}
 
-	filePaths, err := parsePaths(paths, *recursiveFlag)
+	filePaths, err := filesFromPaths(paths, *recursiveFlag)
 	if err != nil {
 		exitWithPrint("Parse file info:", err)
 	}
 
-	textFilePaths, err := filterTextFiles(filePaths)
+	textFilePaths, err := textFilesFromFiles(filePaths)
 	if err != nil {
 		exitWithPrint("Failed to filter text files:", err)
 	}
@@ -90,7 +90,7 @@ func main() {
 	usedFiles := len(textFilePaths)
 	skippedFiles := len(filePaths) - usedFiles
 
-	counters, err := countLines(textFilePaths, profs)
+	counters, err := countLinesInFiles(textFilePaths, profs)
 	if err != nil {
 		exitWithPrint("Counting lines:", err)
 	}

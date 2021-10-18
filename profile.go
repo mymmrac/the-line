@@ -11,20 +11,20 @@ type profile struct {
 }
 
 func (p *profile) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	type profileUnmarshal struct {
+	type uProfile struct {
 		PathFormat string `yaml:"path-format"`
 		Rules      rules  `yaml:"rules"`
 	}
 
-	u := profileUnmarshal{}
+	u := uProfile{}
 	err := unmarshal(&u)
 	if err != nil {
 		return err
 	}
 
 	p.Rules = u.Rules
-
 	p.PathFormat, err = regexp.Compile(u.PathFormat)
+
 	return err
 }
 
@@ -35,7 +35,8 @@ func (p *profile) checkPath(filename string) bool {
 type profiles map[string]profile
 
 func (p profiles) filter(profileNames []string) (profiles, error) {
-	filtered := make(profiles)
+	filtered := make(profiles, len(profileNames))
+
 	for _, profName := range profileNames {
 		prof, ok := p[profName]
 		if !ok {

@@ -14,12 +14,12 @@ func displayCounts(usedFiles, skippedFiles int, counters lineCounters) {
 
 	for _, counter := range counters {
 		fmt.Printf(" ==== %s ==== \n", counter.filename)
-		displayMatched(counter.matched)
+		displayCount(counter.count)
 		fmt.Println()
 	}
 
 	fmt.Println(" ==== TOTAL ==== ")
-	displayMatched(counters.sum())
+	displayCount(counters.totalCount())
 }
 
 type ruleSorter struct {
@@ -47,7 +47,7 @@ type namedProfile struct {
 
 const minRuleNameLength = 6
 
-func displayMatched(matched map[string]map[string]int) {
+func displayCount(matched map[string]map[string]int) {
 	i := 0
 	np := make([]namedProfile, len(matched))
 	for profName, ruleMatch := range matched {
