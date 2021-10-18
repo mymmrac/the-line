@@ -1,14 +1,18 @@
 package main
 
+type countByRule map[string]int
+
+type countByProfile map[string]countByRule
+
 type lineCounter struct {
 	filename string
-	count    map[string]map[string]int // TODO: Crate type alias
+	count    countByProfile
 }
 
 func newLineCounter(filename string) *lineCounter {
 	return &lineCounter{
 		filename: filename,
-		count:    make(map[string]map[string]int),
+		count:    make(countByProfile),
 	}
 }
 
@@ -16,7 +20,7 @@ func (l *lineCounter) countLine(line string, profiles profiles) {
 	for profName, p := range profiles {
 		if p.checkPath(l.filename) {
 			if _, ok := l.count[profName]; !ok {
-				l.count[profName] = make(map[string]int)
+				l.count[profName] = make(countByRule)
 			}
 
 			for ruleName, r := range p.Rules {
@@ -34,13 +38,13 @@ func (l *lineCounter) countLine(line string, profiles profiles) {
 
 type lineCounters []lineCounter
 
-func (l lineCounters) totalCount() map[string]map[string]int {
-	count := make(map[string]map[string]int, len(l))
+func (l lineCounters) totalCount() countByProfile {
+	count := make(countByProfile, len(l))
 
 	for _, lc := range l {
 		for profileName, profileCount := range lc.count {
 			if _, ok := count[profileName]; !ok {
-				count[profileName] = make(map[string]int, len(profileCount))
+				count[profileName] = make(countByRule, len(profileCount))
 			}
 
 			for ruleName, ruleCount := range profileCount {

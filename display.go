@@ -47,7 +47,7 @@ type namedProfile struct {
 
 const minRuleNameLength = 6
 
-func displayCount(matched map[string]map[string]int) {
+func displayCount(matched countByProfile) {
 	i := 0
 	np := make([]namedProfile, len(matched))
 	for profName, ruleMatch := range matched {
