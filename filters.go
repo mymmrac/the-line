@@ -120,7 +120,7 @@ func (f *multilineFilter) UnmarshalYAML(unmarshal func(interface{}) error) error
 	if !ok {
 		return fmt.Errorf("no kind for multiline filert start")
 	}
-	f.StartFilter, err = parseFilter(kind.(string), u.StartFilter)
+	f.StartFilter, err = unmarshalYAMLFilter(kind, u.StartFilter)
 	if err != nil {
 		return err
 	}
@@ -129,7 +129,7 @@ func (f *multilineFilter) UnmarshalYAML(unmarshal func(interface{}) error) error
 	if !ok {
 		return fmt.Errorf("no kind for multiline filert end")
 	}
-	f.EndFilter, err = parseFilter(kind.(string), u.EndFilter)
+	f.EndFilter, err = unmarshalYAMLFilter(kind, u.EndFilter)
 	if err != nil {
 		return err
 	}
@@ -162,7 +162,7 @@ func (f *unionFilter) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if !ok {
 		return fmt.Errorf("no kind for union filert a")
 	}
-	f.FilterA, err = parseFilter(kind.(string), u.FilterA)
+	f.FilterA, err = unmarshalYAMLFilter(kind, u.FilterA)
 	if err != nil {
 		return err
 	}
@@ -171,7 +171,7 @@ func (f *unionFilter) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if !ok {
 		return fmt.Errorf("no kind for union filert b")
 	}
-	f.FilterB, err = parseFilter(kind.(string), u.FilterB)
+	f.FilterB, err = unmarshalYAMLFilter(kind, u.FilterB)
 	if err != nil {
 		return err
 	}
@@ -204,7 +204,7 @@ func (f *intersectionFilter) UnmarshalYAML(unmarshal func(interface{}) error) er
 	if !ok {
 		return fmt.Errorf("no kind for intersection filert a")
 	}
-	f.FilterA, err = parseFilter(kind.(string), u.FilterA)
+	f.FilterA, err = unmarshalYAMLFilter(kind, u.FilterA)
 	if err != nil {
 		return err
 	}
@@ -213,7 +213,7 @@ func (f *intersectionFilter) UnmarshalYAML(unmarshal func(interface{}) error) er
 	if !ok {
 		return fmt.Errorf("no kind for intersection filert b")
 	}
-	f.FilterB, err = parseFilter(kind.(string), u.FilterB)
+	f.FilterB, err = unmarshalYAMLFilter(kind, u.FilterB)
 	if err != nil {
 		return err
 	}
@@ -244,7 +244,7 @@ func (f *notFilter) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if !ok {
 		return fmt.Errorf("no kind for not filter")
 	}
-	f.Filter, err = parseFilter(kind.(string), u.Filter)
+	f.Filter, err = unmarshalYAMLFilter(kind, u.Filter)
 
 	return err
 }

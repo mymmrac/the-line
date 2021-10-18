@@ -172,7 +172,7 @@ linters-settings:
         lines: 150
         statements: 50
     gci:
-        local-prefixes: github.com/mymmrac/telego
+        local-prefixes: github.com/mymmrac/the-line
 
 issues:
     # Excluding configuration per-path, per-linter, per-text and per-source

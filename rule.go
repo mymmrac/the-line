@@ -13,164 +13,6 @@ type rule struct {
 	Filters    []filterer     `yaml:"filters"`
 }
 
-type imap map[interface{}]interface{}
-
-//nolint:funlen,gocyclo,gocognit
-func parseFilter(kind string, value imap) (filterer, error) {
-	var f filterer
-	switch kind {
-	case "any":
-		f = &anyFilter{}
-	case "blank":
-		f = &blankFilter{}
-	case "match":
-		m := &matchFilter{}
-		bytes, _ := yaml.Marshal(value)
-		if err := yaml.Unmarshal(bytes, m); err != nil {
-			return nil, err
-		}
-		f = m
-	case "contains":
-		m := &containsFilter{}
-		bytes, _ := yaml.Marshal(value)
-		if err := yaml.Unmarshal(bytes, m); err != nil {
-			return nil, err
-		}
-		f = m
-	case "prefix":
-		m := &prefixFilter{}
-		bytes, _ := yaml.Marshal(value)
-		if err := yaml.Unmarshal(bytes, m); err != nil {
-			return nil, err
-		}
-		f = m
-	case "suffix":
-		m := &suffixFilter{}
-		bytes, _ := yaml.Marshal(value)
-		if err := yaml.Unmarshal(bytes, m); err != nil {
-			return nil, err
-		}
-		f = m
-	case "length":
-		m := &lengthFilter{}
-		bytes, _ := yaml.Marshal(value)
-		if err := yaml.Unmarshal(bytes, m); err != nil {
-			return nil, err
-		}
-		f = m
-	case "regexp":
-		m := &regexpFilter{}
-		bytes, _ := yaml.Marshal(value)
-		if err := yaml.Unmarshal(bytes, m); err != nil {
-			return nil, err
-		}
-		f = m
-	case "multiline":
-		m := &multilineFilter{}
-		bytes, _ := yaml.Marshal(value)
-		if err := yaml.Unmarshal(bytes, m); err != nil {
-			return nil, err
-		}
-		f = m
-	case "union":
-		m := &unionFilter{}
-		bytes, _ := yaml.Marshal(value)
-		if err := yaml.Unmarshal(bytes, m); err != nil {
-			return nil, err
-		}
-		f = m
-	case "intersection":
-		m := &intersectionFilter{}
-		bytes, _ := yaml.Marshal(value)
-		if err := yaml.Unmarshal(bytes, m); err != nil {
-			return nil, err
-		}
-		f = m
-	case "not":
-		m := &notFilter{}
-		bytes, _ := yaml.Marshal(value)
-		if err := yaml.Unmarshal(bytes, m); err != nil {
-			return nil, err
-		}
-		f = m
-	default:
-		return nil, fmt.Errorf("unknown filter: %q", kind)
-	}
-
-	return f, nil
-}
-
-func (r *rule) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	type ruleUnmarshal struct {
-		PathFormat string `yaml:"path-format"`
-		Modifiers  []imap `yaml:"modifiers"`
-		Filters    []imap `yaml:"filters"`
-	}
-
-	u := ruleUnmarshal{}
-	err := unmarshal(&u)
-	if err != nil {
-		return err
-	}
-
-	modifiers := make([]modifier, len(u.Modifiers))
-	for i, m := range u.Modifiers {
-		kind, ok := m["kind"]
-		if !ok {
-			return fmt.Errorf("no kind")
-		}
-
-		switch kind {
-		case "trim-spaces":
-			modifiers[i] = &trimSpaceModifier{}
-		case "trim-prefix":
-			um := &trimPrefixModifier{}
-			bytes, _ := yaml.Marshal(m)
-			if err = yaml.Unmarshal(bytes, um); err != nil {
-				return err
-			}
-			modifiers[i] = um
-		case "trim-suffix":
-			um := &trimSuffixModifier{}
-			bytes, _ := yaml.Marshal(m)
-			if err = yaml.Unmarshal(bytes, um); err != nil {
-				return err
-			}
-			modifiers[i] = um
-		case "to-lower":
-			modifiers[i] = &toLowerModifier{}
-		default:
-			return fmt.Errorf("unknown modifier: %q", kind)
-		}
-	}
-
-	filters := make([]filterer, len(u.Filters))
-	for i, f := range u.Filters {
-		kind, ok := f["kind"]
-		if !ok {
-			return fmt.Errorf("no kind")
-		}
-
-		filters[i], err = parseFilter(kind.(string), f)
-		if err != nil {
-			return err
-		}
-	}
-
-	parsedRule, err := newRule(u.PathFormat, modifiers, filters)
-	if err != nil {
-		return err
-	}
-
-	r.PathFormat = parsedRule.PathFormat
-	r.Modifiers = parsedRule.Modifiers
-	r.Filters = parsedRule.Filters
-
-	return nil
-}
-
-type rules map[string]*rule
-
 func newRule(pathFormat string, modifiers []modifier, filters []filterer) (*rule, error) {
 	reg, err := regexp.Compile(pathFormat)
 	if err != nil {
@@ -210,4 +52,172 @@ func (r *rule) checkLine(line string) bool {
 	}
 
 	return ok
+}
+
+type rules map[string]*rule
+
+type imap map[interface{}]interface{}
+
+func (r *rule) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	type uRule struct {
+		PathFormat string `yaml:"path-format"`
+		Modifiers  []imap `yaml:"modifiers"`
+		Filters    []imap `yaml:"filters"`
+	}
+
+	u := uRule{}
+	err := unmarshal(&u)
+	if err != nil {
+		return err
+	}
+
+	modifiers := make([]modifier, len(u.Modifiers))
+	for i, m := range u.Modifiers {
+		kind, ok := m["kind"]
+		if !ok {
+			return fmt.Errorf("no kind for modifier")
+		}
+
+		modifiers[i], err = unmarshalYAMLModifier(kind, m)
+		if err != nil {
+			return err
+		}
+	}
+
+	filters := make([]filterer, len(u.Filters))
+	for i, f := range u.Filters {
+		kind, ok := f["kind"]
+		if !ok {
+			return fmt.Errorf("no kind for filter")
+		}
+
+		filters[i], err = unmarshalYAMLFilter(kind, f)
+		if err != nil {
+			return err
+		}
+	}
+
+	parsedRule, err := newRule(u.PathFormat, modifiers, filters)
+	if err != nil {
+		return err
+	}
+
+	r.PathFormat = parsedRule.PathFormat
+	r.Modifiers = parsedRule.Modifiers
+	r.Filters = parsedRule.Filters
+
+	return nil
+}
+
+func unmarshalYAMLModifier(kind interface{}, value imap) (modifier, error) {
+	var m modifier
+
+	bytes, err := yaml.Marshal(value)
+	if err != nil {
+		return nil, err
+	}
+
+	switch kind {
+	case "trim-spaces":
+		m = &trimSpaceModifier{}
+	case "trim-prefix":
+		u := &trimPrefixModifier{}
+		if err = yaml.Unmarshal(bytes, u); err != nil {
+			return nil, err
+		}
+		m = u
+	case "trim-suffix":
+		u := &trimSuffixModifier{}
+		if err = yaml.Unmarshal(bytes, u); err != nil {
+			return nil, err
+		}
+		m = u
+	case "to-lower":
+		m = &toLowerModifier{}
+	default:
+		return nil, fmt.Errorf("unknown modifier: %q", kind)
+	}
+
+	return m, nil
+}
+
+//nolint:funlen,gocyclo,gocognit
+func unmarshalYAMLFilter(kind interface{}, value imap) (filterer, error) {
+	var f filterer
+
+	bytes, err := yaml.Marshal(value)
+	if err != nil {
+		return nil, err
+	}
+
+	switch kind {
+	case "any":
+		f = &anyFilter{}
+	case "blank":
+		f = &blankFilter{}
+	case "match":
+		u := &matchFilter{}
+		if err = yaml.Unmarshal(bytes, u); err != nil {
+			return nil, err
+		}
+		f = u
+	case "contains":
+		u := &containsFilter{}
+		if err = yaml.Unmarshal(bytes, u); err != nil {
+			return nil, err
+		}
+		f = u
+	case "prefix":
+		u := &prefixFilter{}
+		if err = yaml.Unmarshal(bytes, u); err != nil {
+			return nil, err
+		}
+		f = u
+	case "suffix":
+		u := &suffixFilter{}
+		if err = yaml.Unmarshal(bytes, u); err != nil {
+			return nil, err
+		}
+		f = u
+	case "length":
+		u := &lengthFilter{}
+		if err = yaml.Unmarshal(bytes, u); err != nil {
+			return nil, err
+		}
+		f = u
+	case "regexp":
+		u := &regexpFilter{}
+		if err = yaml.Unmarshal(bytes, u); err != nil {
+			return nil, err
+		}
+		f = u
+	case "multiline":
+		u := &multilineFilter{}
+		if err = yaml.Unmarshal(bytes, u); err != nil {
+			return nil, err
+		}
+		f = u
+	case "union":
+		u := &unionFilter{}
+		if err = yaml.Unmarshal(bytes, u); err != nil {
+			return nil, err
+		}
+		f = u
+	case "intersection":
+		u := &intersectionFilter{}
+		if err = yaml.Unmarshal(bytes, u); err != nil {
+			return nil, err
+		}
+		f = u
+	case "not":
+		u := &notFilter{}
+		if err = yaml.Unmarshal(bytes, u); err != nil {
+			return nil, err
+		}
+		f = u
+	default:
+		return nil, fmt.Errorf("unknown filter: %q", kind)
+	}
+
+	return f, nil
 }
