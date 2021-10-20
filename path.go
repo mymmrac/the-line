@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func pathsFromPatterns(patterns []string) (paths []string, err error) {
@@ -22,7 +23,7 @@ func pathsFromPatterns(patterns []string) (paths []string, err error) {
 	return paths, nil
 }
 
-func filesFromPaths(paths []string, recursive bool) (files []string, err error) {
+func filesFromPaths(paths []string, recursive, dotFiles bool) (files []string, err error) {
 	files, dirs, err := filesAndDirsFromPaths(paths)
 	if err != nil {
 		return nil, fmt.Errorf("split files & dirs: %w", err)
@@ -51,6 +52,10 @@ func filesFromPaths(paths []string, recursive bool) (files []string, err error) 
 	files, err = absPathsFromPaths(files)
 	if err != nil {
 		return nil, fmt.Errorf("abs paths: %w", err)
+	}
+
+	if !dotFiles {
+		files = excludeDotFiles(files)
 	}
 
 	return files, nil
@@ -86,4 +91,18 @@ func absPathsFromPaths(paths []string) (absPaths []string, err error) {
 	}
 
 	return absPaths, nil
+}
+
+const dotFile = "/."
+
+func excludeDotFiles(paths []string) []string {
+	var excluded []string
+
+	for _, path := range paths {
+		if !strings.Contains(path, dotFile) {
+			excluded = append(excluded, path)
+		}
+	}
+
+	return excluded
 }

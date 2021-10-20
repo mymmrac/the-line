@@ -14,6 +14,20 @@ type config struct {
 	Profiles profiles `yaml:"profiles"`
 }
 
+type userArgs struct {
+	isRecursive    bool
+	isDotFiles     bool
+	profileNames   []string
+	configFilename string
+	patterns       []string
+}
+
+type filesData struct {
+	filePaths    []string
+	usedFiles    int
+	skippedFiles int
+}
+
 const defaultProfile = "default"
 
 const separator = ","
@@ -50,7 +64,7 @@ func main() {
 	}
 
 	// Processing files
-	data, err := processPatterns(args.patterns, args.isRecursive)
+	data, err := processPatterns(args.patterns, args.isRecursive, args.isDotFiles)
 	if err != nil {
 		exitWithPrint("Processing files:", err)
 	}
@@ -75,18 +89,11 @@ func embeddedConfig() (*config, error) {
 	return &conf, nil
 }
 
-type userArgs struct {
-	isRecursive    bool
-	profileNames   []string
-	configFilename string
-	patterns       []string
-}
-
 func userInput() (userArgs, error) {
 	// TODO: Add arguments validation
-	// TODO: Flag for include hidden files
 
 	recursiveFlag := flag.Bool("r", false, "Recursively search in dirs matched by pattern")
+	dotFilesFlag := flag.Bool("d", false, "Include dot files/folders")
 	profNamesFlag := flag.String("p", "", "Profiles to use")
 	configFileFlag := flag.String("c", "", "User defined config file")
 
@@ -94,6 +101,7 @@ func userInput() (userArgs, error) {
 
 	args := userArgs{
 		isRecursive:    *recursiveFlag,
+		isDotFiles:     *dotFilesFlag,
 		configFilename: *configFileFlag,
 	}
 
@@ -129,19 +137,13 @@ func userConfig(configFilename string) (*config, error) {
 	return &conf, nil
 }
 
-type filesData struct {
-	filePaths    []string
-	usedFiles    int
-	skippedFiles int
-}
-
-func processPatterns(patterns []string, isRecursive bool) (filesData, error) {
+func processPatterns(patterns []string, isRecursive, isDotFiles bool) (filesData, error) {
 	paths, err := pathsFromPatterns(patterns)
 	if err != nil {
 		return filesData{}, fmt.Errorf("paths: %w", err)
 	}
 
-	filePaths, err := filesFromPaths(paths, isRecursive)
+	filePaths, err := filesFromPaths(paths, isRecursive, isDotFiles)
 	if err != nil {
 		return filesData{}, fmt.Errorf("file info: %w", err)
 	}
