@@ -33,3 +33,5 @@ List of supported features (or TBD features)
 
 - [ ] Pretty interface using [Charm](https://charm.sh/)
 - [X] Minimal output (regular stdout)
+- [ ] Output only total
+- [ ] Output grouped by folders

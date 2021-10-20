@@ -23,14 +23,68 @@ var defaultConfigBytes []byte
 
 func main() {
 	// Reading embedded config
-	conf := &config{}
-	err := yaml.Unmarshal(defaultConfigBytes, conf)
+	conf, err := embeddedConfig()
 	if err != nil {
 		exitWithPrint("Embedded config:", err)
 	}
 
-	// Reading arguments
+	// Reading user input
+	args, err := userInput()
+	if err != nil {
+		exitWithPrint("User input:", err)
+	}
+
+	// Reading user config
+	if args.configFilename != "" {
+		conf, err = userConfig(args.configFilename)
+		if err != nil {
+			exitWithPrint("User config:", err)
+		}
+	}
+
+	// Processing configs
+	// TODO: Refactor
+	profs, err := conf.Profiles.filter(args.profileNames)
+	if err != nil {
+		exitWithPrint("Getting profiles:", err)
+	}
+
+	// Processing files
+	data, err := processPatterns(args.patterns, args.isRecursive)
+	if err != nil {
+		exitWithPrint("Processing files:", err)
+	}
+
+	// Counting lines
+	counters, err := countLinesInFiles(data.filePaths, profs)
+	if err != nil {
+		exitWithPrint("Counting lines:", err)
+	}
+
+	// Displaying output
+	displayCounts(data.usedFiles, data.skippedFiles, counters)
+}
+
+func embeddedConfig() (*config, error) {
+	var conf config
+	err := yaml.Unmarshal(defaultConfigBytes, &conf)
+	if err != nil {
+		return nil, fmt.Errorf("decoding: %w", err)
+	}
+
+	return &conf, nil
+}
+
+type userArgs struct {
+	isRecursive    bool
+	profileNames   []string
+	configFilename string
+	patterns       []string
+}
+
+func userInput() (userArgs, error) {
 	// TODO: Add arguments validation
+	// TODO: Flag for include hidden files
 
 	recursiveFlag := flag.Bool("r", false, "Recursively search in dirs matched by pattern")
 	profNamesFlag := flag.String("p", "", "Profiles to use")
@@ -38,102 +92,73 @@ func main() {
 
 	flag.Parse()
 
-	profileNames := []string{
+	args := userArgs{
+		isRecursive:    *recursiveFlag,
+		configFilename: *configFileFlag,
+	}
+
+	args.profileNames = []string{
 		defaultProfile,
 	}
 
 	if len(*profNamesFlag) > 0 {
-		profileNames = strings.Split(*profNamesFlag, separator)
+		args.profileNames = strings.Split(*profNamesFlag, separator)
 	}
 
 	if len(flag.Args()) < 1 {
-		exitWithPrint("Please enter pattern(s) as arguments")
+		return userArgs{}, fmt.Errorf("no patterns given")
 	}
-	patterns := flag.Args()
+	args.patterns = flag.Args()
 
-	// Reading user config
-	if *configFileFlag != "" {
-		var configFile *os.File
-		configFile, err = os.Open(*configFileFlag)
-		if err != nil {
-			exitWithPrint("Reading user config:", err)
-		}
+	return args, nil
+}
 
-		err = yaml.NewDecoder(configFile).Decode(conf)
-		if err != nil {
-			exitWithPrint("User config:", err)
-		}
-	}
-
-	// Processing configs
-	profs, err := conf.Profiles.filter(profileNames)
+func userConfig(configFilename string) (*config, error) {
+	//nolint:gosec
+	configFile, err := os.Open(configFilename)
 	if err != nil {
-		exitWithPrint("Getting profiles:", err)
+		return nil, fmt.Errorf("opening file: %w", err)
 	}
 
-	// Processing files
+	var conf config
+	err = yaml.NewDecoder(configFile).Decode(&conf)
+	if err != nil {
+		return nil, fmt.Errorf("decoding: %w", err)
+	}
+
+	return &conf, nil
+}
+
+type filesData struct {
+	filePaths    []string
+	usedFiles    int
+	skippedFiles int
+}
+
+func processPatterns(patterns []string, isRecursive bool) (filesData, error) {
 	paths, err := pathsFromPatterns(patterns)
 	if err != nil {
-		exitWithPrint("Pattern(s):", err)
+		return filesData{}, fmt.Errorf("paths: %w", err)
 	}
 
-	filePaths, err := filesFromPaths(paths, *recursiveFlag)
+	filePaths, err := filesFromPaths(paths, isRecursive)
 	if err != nil {
-		exitWithPrint("Parse file info:", err)
+		return filesData{}, fmt.Errorf("file info: %w", err)
 	}
 
 	textFilePaths, err := textFilesFromFiles(filePaths)
 	if err != nil {
-		exitWithPrint("Failed to filter text files:", err)
+		return filesData{}, fmt.Errorf("filter text files: %w", err)
 	}
 
-	usedFiles := len(textFilePaths)
-	skippedFiles := len(filePaths) - usedFiles
-
-	counters, err := countLinesInFiles(textFilePaths, profs)
-	if err != nil {
-		exitWithPrint("Counting lines:", err)
-	}
-
-	// Displaying output
-	displayCounts(usedFiles, skippedFiles, counters)
+	return filesData{
+		filePaths:    textFilePaths,
+		usedFiles:    len(textFilePaths),
+		skippedFiles: len(filePaths) - len(textFilePaths),
+	}, nil
 }
 
 func exitWithPrint(args ...interface{}) {
 	fmt.Println(args...)
 	os.Exit(1)
 }
-
-/*
-
-Desired output:
-
-<filename #>
-	- 		 	<rule #>	<rule #> ...
-<profile #> 	  123		  123
-	- 			<rule #>	<rule #> 	<rule #> ...
-<profile #> 	  123		  123		  123
-	- 			<rule #>	<rule #> ...
-<profile #> 	  123		  123
-
-<filename #>
-	- 		 	<rule #>	<rule #> ...
-<profile #> 	  123		  123
-	- 		 	<rule #> ...
-<profile #> 	  123
-
-========================================================
-
-Total
-	- 		 	<rule #>	<rule #> ...
-<profile #> 	  123		  123
-	- 			<rule #>	<rule #> 	<rule #> ...
-<profile #> 	  123		  123		  123
-	- 			<rule #>	<rule #> ...
-<profile #> 	  123		  123
-	- 		 	<rule #> ...
-<profile #> 	  123
-
-...
-
-*/
