@@ -2,7 +2,7 @@ profiles:
     default:
         path-format: '.+'
         rules:
-            new-line: &new-line
+            lines: &lines
                 path-format: '.+'
                 modifiers: [ ]
                 filters:
@@ -17,7 +17,7 @@ profiles:
     go:
         path-format: '.+\.go$'
         rules: &r-go
-            new-line: *new-line
+            lines: *lines
             blank: *blank
             comments:
                 path-format: '.+'
