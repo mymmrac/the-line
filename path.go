@@ -8,6 +8,35 @@ import (
 	"strings"
 )
 
+type filesData struct {
+	filePaths    []string
+	usedFiles    int
+	skippedFiles int
+}
+
+func processPatterns(patterns []string, isRecursive, isDotFiles bool) (*filesData, error) {
+	paths, err := pathsFromPatterns(patterns)
+	if err != nil {
+		return nil, fmt.Errorf("paths: %w", err)
+	}
+
+	filePaths, err := filesFromPaths(paths, isRecursive, isDotFiles)
+	if err != nil {
+		return nil, fmt.Errorf("file info: %w", err)
+	}
+
+	textFilePaths, err := textFilesFromFiles(filePaths)
+	if err != nil {
+		return nil, fmt.Errorf("filter text files: %w", err)
+	}
+
+	return &filesData{
+		filePaths:    textFilePaths,
+		usedFiles:    len(textFilePaths),
+		skippedFiles: len(filePaths) - len(textFilePaths),
+	}, nil
+}
+
 func pathsFromPatterns(patterns []string) (paths []string, err error) {
 	var matched []string
 

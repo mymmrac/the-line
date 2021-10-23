@@ -34,7 +34,7 @@ func (p *profile) checkPath(filename string) bool {
 
 type profiles map[string]profile
 
-func (p profiles) filter(profileNames []string) (profiles, error) {
+func filterProfiles(p profiles, profileNames []string) (profiles, error) {
 	filtered := make(profiles, len(profileNames))
 
 	for _, profName := range profileNames {

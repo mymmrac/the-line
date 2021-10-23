@@ -1,166 +1,123 @@
 package main
 
 import (
-	_ "embed"
-	"flag"
 	"fmt"
+	"log"
 	"os"
-	"strings"
+	"reflect"
 
-	"gopkg.in/yaml.v2"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
-type config struct {
-	Profiles profiles `yaml:"profiles"`
+type model struct {
+	err        error
+	countReady bool
+	data       *filesData
+	counters   lineCounters
 }
 
-type userArgs struct {
-	isRecursive    bool
-	isDotFiles     bool
-	profileNames   []string
-	configFilename string
-	patterns       []string
+type parameters struct {
+	profs profiles
+	args  *userArgs
 }
 
-type filesData struct {
-	filePaths    []string
-	usedFiles    int
-	skippedFiles int
-}
+func (m model) Init() tea.Cmd {
+	return func() tea.Msg {
+		p := parameters{}
 
-const defaultProfile = "default"
+		// Reading embedded config
+		conf, err := embeddedConfig()
+		if m.err != nil {
+			return fmt.Errorf("embedded config: %w", err)
+		}
 
-const separator = ","
-
-//go:embed default.yaml
-var defaultConfigBytes []byte
-
-func main() {
-	// Reading embedded config
-	conf, err := embeddedConfig()
-	if err != nil {
-		exitWithPrint("Embedded config:", err)
-	}
-
-	// Reading user input
-	args, err := userInput()
-	if err != nil {
-		exitWithPrint("User input:", err)
-	}
-
-	// Reading user config
-	if args.configFilename != "" {
-		conf, err = userConfig(args.configFilename)
+		// Reading user input
+		p.args, err = userInput()
 		if err != nil {
-			exitWithPrint("User config:", err)
+			return fmt.Errorf("user input: %w", err)
+		}
+
+		// Reading user config
+		if p.args.configFilename != "" {
+			conf, err = userConfig(p.args.configFilename)
+			if err != nil {
+				return fmt.Errorf("user config: %w", err)
+			}
+		}
+
+		// Filter profiles
+		p.profs, err = filterProfiles(conf.Profiles, p.args.profileNames)
+		if err != nil {
+			return fmt.Errorf("getting profiles: %w", err)
+		}
+
+		return p
+	}
+}
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	log.Println(reflect.TypeOf(msg), msg)
+
+	switch msg := msg.(type) {
+	case error:
+		m.err = msg
+		return m, tea.Quit
+	case parameters:
+		var err error
+		// Processing files
+		m.data, err = processPatterns(msg.args.patterns, msg.args.isRecursive, msg.args.isDotFiles)
+		if err != nil {
+			m.err = fmt.Errorf("processing files: %w", err)
+			return m, tea.Quit
+		}
+
+		// Counting lines
+		m.counters, err = countLinesInFiles(m.data.filePaths, msg.profs)
+		if err != nil {
+			m.err = fmt.Errorf("counting lines: %w", err)
+			return m, tea.Quit
+		}
+
+		m.countReady = true
+		return m, tea.Quit
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c", "q", "esc":
+			return m, tea.Quit
 		}
 	}
 
-	// Processing configs
-	// TODO: Refactor
-	profs, err := conf.Profiles.filter(args.profileNames)
-	if err != nil {
-		exitWithPrint("Getting profiles:", err)
-	}
-
-	// Processing files
-	data, err := processPatterns(args.patterns, args.isRecursive, args.isDotFiles)
-	if err != nil {
-		exitWithPrint("Processing files:", err)
-	}
-
-	// Counting lines
-	counters, err := countLinesInFiles(data.filePaths, profs)
-	if err != nil {
-		exitWithPrint("Counting lines:", err)
-	}
-
-	// Displaying output
-	displayCounts(data.usedFiles, data.skippedFiles, counters)
+	return m, nil
 }
 
-func embeddedConfig() (*config, error) {
-	var conf config
-	err := yaml.Unmarshal(defaultConfigBytes, &conf)
-	if err != nil {
-		return nil, fmt.Errorf("decoding: %w", err)
+func (m model) View() string {
+	if m.err != nil {
+		return fmt.Sprintf("Something went wrong: %s\n", m.err)
 	}
 
-	return &conf, nil
+	if m.countReady {
+		// Displaying output
+		return displayCounts(m.data.usedFiles, m.data.skippedFiles, m.counters)
+	}
+
+	return "Counting...\n"
 }
 
-func userInput() (userArgs, error) {
-	// TODO: Add arguments validation
-
-	recursiveFlag := flag.Bool("r", false, "Recursively search in dirs matched by pattern")
-	dotFilesFlag := flag.Bool("d", false, "Include dot files/folders")
-	profNamesFlag := flag.String("p", "", "Profiles to use")
-	configFileFlag := flag.String("c", "", "User defined config file")
-
-	flag.Parse()
-
-	args := userArgs{
-		isRecursive:    *recursiveFlag,
-		isDotFiles:     *dotFilesFlag,
-		configFilename: *configFileFlag,
-	}
-
-	args.profileNames = []string{
-		defaultProfile,
-	}
-
-	if len(*profNamesFlag) > 0 {
-		args.profileNames = strings.Split(*profNamesFlag, separator)
-	}
-
-	if len(flag.Args()) < 1 {
-		return userArgs{}, fmt.Errorf("no patterns given")
-	}
-	args.patterns = flag.Args()
-
-	return args, nil
-}
-
-func userConfig(configFilename string) (*config, error) {
-	//nolint:gosec
-	configFile, err := os.Open(configFilename)
+func main() {
+	// Logging setup
+	f, err := tea.LogToFile("debug.log", "debug")
 	if err != nil {
-		return nil, fmt.Errorf("opening file: %w", err)
+		fmt.Println("Fatal:", err)
+		os.Exit(1)
+	}
+	_ = f.Truncate(0)
+
+	// Program
+	if err = tea.NewProgram(&model{}).Start(); err != nil {
+		fmt.Printf("Opss, something went really wrong: %v", err)
+		os.Exit(1)
 	}
 
-	var conf config
-	err = yaml.NewDecoder(configFile).Decode(&conf)
-	if err != nil {
-		return nil, fmt.Errorf("decoding: %w", err)
-	}
-
-	return &conf, nil
-}
-
-func processPatterns(patterns []string, isRecursive, isDotFiles bool) (filesData, error) {
-	paths, err := pathsFromPatterns(patterns)
-	if err != nil {
-		return filesData{}, fmt.Errorf("paths: %w", err)
-	}
-
-	filePaths, err := filesFromPaths(paths, isRecursive, isDotFiles)
-	if err != nil {
-		return filesData{}, fmt.Errorf("file info: %w", err)
-	}
-
-	textFilePaths, err := textFilesFromFiles(filePaths)
-	if err != nil {
-		return filesData{}, fmt.Errorf("filter text files: %w", err)
-	}
-
-	return filesData{
-		filePaths:    textFilePaths,
-		usedFiles:    len(textFilePaths),
-		skippedFiles: len(filePaths) - len(textFilePaths),
-	}, nil
-}
-
-func exitWithPrint(args ...interface{}) {
-	fmt.Println(args...)
-	os.Exit(1)
+	// Closing log file
+	_ = f.Close()
 }

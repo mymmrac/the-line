@@ -1,25 +1,30 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"sort"
 	"strconv"
 	"strings"
 )
 
-func displayCounts(usedFiles, skippedFiles int, counters lineCounters) {
-	fmt.Println("Used files:", usedFiles)
-	fmt.Println("Skipped files:", skippedFiles)
-	fmt.Println()
+func displayCounts(usedFiles, skippedFiles int, counters lineCounters) string {
+	res := &bytes.Buffer{}
+
+	fmt.Fprintln(res, "Used files:", usedFiles)
+	fmt.Fprintln(res, "Skipped files:", skippedFiles)
+	fmt.Fprintln(res)
 
 	for _, counter := range counters {
-		fmt.Printf(" ==== %s ==== \n", counter.filename)
-		displayCount(counter.count)
-		fmt.Println()
+		fmt.Fprintf(res, " ==== %s ==== \n", counter.filename)
+		displayCount(counter.count, res)
+		fmt.Fprintln(res)
 	}
 
-	fmt.Println(" ==== TOTAL ==== ")
-	displayCount(counters.totalCount())
+	fmt.Fprintln(res, " ==== TOTAL ==== ")
+	displayCount(counters.totalCount(), res)
+
+	return res.String()
 }
 
 type ruleSorter struct {
@@ -47,7 +52,7 @@ type namedProfile struct {
 
 const minRuleNameLength = 6
 
-func displayCount(matched countByProfile) {
+func displayCount(matched countByProfile, res *bytes.Buffer) {
 	i := 0
 	np := make([]namedProfile, len(matched))
 	for profName, ruleMatch := range matched {
@@ -93,7 +98,7 @@ func displayCount(matched countByProfile) {
 			profRow += rs.counts[l] + strings.Repeat(" ", len(r)-len(rs.counts[l]))
 		}
 
-		fmt.Println(rulesRow)
-		fmt.Println(profRow)
+		fmt.Fprintln(res, rulesRow)
+		fmt.Fprintln(res, profRow)
 	}
 }
