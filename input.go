@@ -1,14 +1,12 @@
 package main
 
 import (
-	"flag"
 	"fmt"
-	"strings"
+
+	"github.com/spf13/cobra"
 )
 
 const defaultProfile = "default"
-
-const separator = ","
 
 type userArgs struct {
 	isRecursive    bool
@@ -18,34 +16,48 @@ type userArgs struct {
 	patterns       []string
 }
 
-func userInput() (*userArgs, error) {
+func userInput() (*userArgs, bool, error) {
 	// TODO: Add arguments validation
+	var (
+		isExecuting = false
 
-	recursiveFlag := flag.Bool("r", false, "Recursively search in dirs matched by pattern")
-	dotFilesFlag := flag.Bool("d", false, "Include dot files/folders")
-	profNamesFlag := flag.String("p", "", "Profiles to use")
-	configFileFlag := flag.String("c", "", "User defined config file")
+		cmdArgs []string
 
-	flag.Parse()
+		recursiveFlag  bool
+		dotFilesFlag   bool
+		configFileFlag string
+		profNames      []string
+	)
+
+	rootCmd := &cobra.Command{
+		Use:   "{patterns}...",
+		Short: "Count lines in matched files",
+		Long: `Counts lines in files matched by glob patterns.
+Displays count information based in profiles & rules specified.`,
+		Args: cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			isExecuting = true
+			cmdArgs = args
+		},
+	}
+
+	rootCmd.Flags().BoolVarP(&recursiveFlag, "recursive", "r", false, "Recursively search in dirs matched by pattern")
+	rootCmd.Flags().BoolVarP(&dotFilesFlag, "dot-files", "d", false, "Include dot files/folders")
+	rootCmd.Flags().StringVarP(&configFileFlag, "config", "c", "", "User defined config file")
+	rootCmd.Flags().StringSliceVarP(&profNames, "profiles", "p", []string{defaultProfile}, "Profiles to use")
+
+	err := rootCmd.Execute()
+	if err != nil {
+		return nil, false, fmt.Errorf("cmd: %w", err)
+	}
 
 	args := &userArgs{
-		isRecursive:    *recursiveFlag,
-		isDotFiles:     *dotFilesFlag,
-		configFilename: *configFileFlag,
+		isRecursive:    recursiveFlag,
+		isDotFiles:     dotFilesFlag,
+		configFilename: configFileFlag,
+		profileNames:   profNames,
+		patterns:       cmdArgs,
 	}
 
-	args.profileNames = []string{
-		defaultProfile,
-	}
-
-	if len(*profNamesFlag) > 0 {
-		args.profileNames = strings.Split(*profNamesFlag, separator)
-	}
-
-	if len(flag.Args()) < 1 {
-		return nil, fmt.Errorf("no patterns given")
-	}
-	args.patterns = flag.Args()
-
-	return args, nil
+	return args, isExecuting, nil
 }

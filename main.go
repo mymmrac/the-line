@@ -32,7 +32,11 @@ func (m model) Init() tea.Cmd {
 		}
 
 		// Reading user input
-		p.args, err = userInput()
+		isExecuting := false
+		p.args, isExecuting, err = userInput()
+		if !isExecuting {
+			return tea.Quit()
+		}
 		if err != nil {
 			return fmt.Errorf("user input: %w", err)
 		}
@@ -100,7 +104,7 @@ func (m model) View() string {
 		return displayCounts(m.data.usedFiles, m.data.skippedFiles, m.counters)
 	}
 
-	return "Counting...\n"
+	return ""
 }
 
 func main() {
