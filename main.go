@@ -27,7 +27,7 @@ func (m model) Init() tea.Cmd {
 
 		// Reading embedded config
 		conf, err := embeddedConfig()
-		if m.err != nil {
+		if err != nil {
 			return fmt.Errorf("embedded config: %w", err)
 		}
 
@@ -48,6 +48,8 @@ func (m model) Init() tea.Cmd {
 				return fmt.Errorf("user config: %w", err)
 			}
 		}
+
+		log.Println(conf)
 
 		// Filter profiles
 		p.profs, err = filterProfiles(conf.Profiles, p.args.profileNames)

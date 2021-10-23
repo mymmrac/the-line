@@ -9,24 +9,23 @@ profiles:
                     -   kind: any
             blank: &blank
                 path-format: '.+'
-                modifiers:
+                modifiers: &m-trim-spaces
                     -   kind: trim-spaces
                 filters:
                     -   kind: blank
 
     go:
         path-format: '.+\.go$'
-        rules:
+        rules: &r-go
             new-line: *new-line
             blank: *blank
             comments:
                 path-format: '.+'
-                modifiers: &trim-spaces
-                    -   kind: trim-spaces
+                modifiers: *m-trim-spaces
                 filters:
-                    - &comment
+                    - &f-comment
                         kind: union
-                        filter-a: &multiline-comment
+                        filter-a: &f-multiline-comment
                             kind: multiline
                             start-filter:
                                 kind: contains
@@ -34,22 +33,31 @@ profiles:
                             end-filter:
                                 kind: contains
                                 line: '*/'
-                        filter-b: &one-line-comment
+                        filter-b: &f-one-line-comment
                             kind: regexp
                             pattern: '^//'
-            one-line-comments:
-                path-format: '.+'
-                modifiers: *trim-spaces
-                filters:
-                    - *one-line-comment
-            multiline-comments:
-                path-format: '.+'
-                modifiers: *trim-spaces
-                filters:
-                    - *multiline-comment
             code:
                 path-format: '.+'
-                modifiers: *trim-spaces
+                modifiers: *m-trim-spaces
                 filters:
                     -   kind: not
-                        filter: *comment
+                        filter:
+                            kind: blank
+                    -   kind: not
+                        filter: *f-comment
+
+    go-extended:
+        path-format: '.+\.go$'
+        rules:
+            <<: *r-go
+            one-line-comments:
+                path-format: '.+'
+                modifiers: *m-trim-spaces
+                filters:
+                    - *f-one-line-comment
+            multiline-comments:
+                path-format: '.+'
+                modifiers: *m-trim-spaces
+                filters:
+                    - *f-multiline-comment
+
