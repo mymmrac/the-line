@@ -41,7 +41,11 @@ Displays count information based in profiles & rules specified.`,
 			isExecuting = true
 			cmdArgs = args
 		},
+		Version: "v1.0.0",
 	}
+
+	rootCmd.SetVersionTemplate(`{{printf "The-Line. Version %s" .Version}}
+`)
 
 	rootCmd.Flags().BoolVarP(&recursiveFlag, "recursive", "r", false, "Recursively search in dirs matched by pattern")
 	rootCmd.Flags().BoolVarP(&dotFilesFlag, "dot-files", "d", false, "Include dot files/folders")
