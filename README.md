@@ -2,6 +2,27 @@
 
 Simple extendable line counter
 
+## Installation
+
+```shell
+go install github.com/mymmrac/the-line@latest
+
+# Optionally rename binary 
+mv $GOPATH/bin/the-line $GOPATH/bin/tl
+```
+
+> NOTE: Make sure to add `$GOPATH/bin` to `$PATH` to use
+
+## Usage
+
+```shell
+# Search for all files/folders in current dir and count lines in Go files
+tl -p go -r .
+
+# Help info
+tl --help
+```
+
 ## Features
 
 List of supported features (or TBD features)
@@ -31,7 +52,14 @@ List of supported features (or TBD features)
 
 ### CLI:
 
-- [ ] Pretty interface using [Charm](https://charm.sh/)
+- [X] Pretty interface using [Charm](https://charm.sh/)
 - [X] Minimal output (regular stdout)
-- [ ] Output only total
+- [X] Output only total
 - [ ] Output grouped by folders
+- [ ] Show used/matched by profiles/skipped files
+
+### Refactoring
+
+- [ ] Main
+- [ ] Display
+- [ ] Make packages
