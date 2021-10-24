@@ -9,10 +9,11 @@ import (
 const defaultProfile = "default"
 
 type userArgs struct {
-	isRecursive    bool
-	isDotFiles     bool
-	profileNames   []string
+	recursive      bool
+	dotFiles       bool
+	verbose        bool
 	configFilename string
+	profileNames   []string
 	patterns       []string
 }
 
@@ -25,6 +26,7 @@ func userInput() (*userArgs, bool, error) {
 
 		recursiveFlag  bool
 		dotFilesFlag   bool
+		verboseFlag    bool
 		configFileFlag string
 		profNames      []string
 	)
@@ -45,6 +47,7 @@ Displays count information based in profiles & rules specified.`,
 	rootCmd.Flags().BoolVarP(&dotFilesFlag, "dot-files", "d", false, "Include dot files/folders")
 	rootCmd.Flags().StringVarP(&configFileFlag, "config", "c", "", "User defined config file")
 	rootCmd.Flags().StringSliceVarP(&profNames, "profiles", "p", []string{defaultProfile}, "Profiles to use")
+	rootCmd.Flags().BoolVarP(&verboseFlag, "verbose", "v", false, "Verbose output")
 
 	err := rootCmd.Execute()
 	if err != nil {
@@ -52,8 +55,9 @@ Displays count information based in profiles & rules specified.`,
 	}
 
 	args := &userArgs{
-		isRecursive:    recursiveFlag,
-		isDotFiles:     dotFilesFlag,
+		recursive:      recursiveFlag,
+		dotFiles:       dotFilesFlag,
+		verbose:        verboseFlag,
 		configFilename: configFileFlag,
 		profileNames:   profNames,
 		patterns:       cmdArgs,

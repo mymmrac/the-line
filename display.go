@@ -6,25 +6,73 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
-func displayCounts(usedFiles, skippedFiles int, counters lineCounters) string {
+var (
+	bracesColor  = lipgloss.Color("#185ADB")
+	successColor = lipgloss.Color("#6ECB63")
+	errorColor   = lipgloss.Color("#FF5C58")
+	numbersColor = lipgloss.Color("#3EDBF0")
+)
+
+var (
+	checkStr = lipgloss.NewStyle().SetString("✓").Foreground(successColor).String()
+	crossStr = lipgloss.NewStyle().SetString("✗").Foreground(errorColor).String()
+
+	bracesStyle   = lipgloss.NewStyle().Foreground(bracesColor)
+	leftBraceStr  = bracesStyle.SetString("❮").String()
+	rightBraceStr = bracesStyle.SetString("❯").String()
+
+	numbersStyle = lipgloss.NewStyle().Foreground(numbersColor)
+
+	titleStyle = lipgloss.NewStyle().Underline(true)
+)
+
+func displayCounts(usedFiles, skippedFiles int, counters lineCounters, verbose bool) string {
 	res := &bytes.Buffer{}
 
-	fmt.Fprintln(res, "Used files:", usedFiles)
-	fmt.Fprintln(res, "Skipped files:", skippedFiles)
+	fmt.Fprintln(res, "Files:")
+	fmt.Fprintln(res, checkStr+" Used   ", numbersStyle.SetString(strconv.Itoa(usedFiles)))
+	fmt.Fprintln(res, crossStr+" Skipped", numbersStyle.SetString(strconv.Itoa(skippedFiles)))
 	fmt.Fprintln(res)
 
-	for _, counter := range counters {
-		fmt.Fprintf(res, " ==== %s ==== \n", counter.filename)
-		displayCount(counter.count, res)
-		fmt.Fprintln(res)
+	if verbose {
+		for _, counter := range counters {
+			displayBlockCount(counter.filename, counter.count, res)
+			fmt.Fprintln(res)
+		}
 	}
 
-	fmt.Fprintln(res, " ==== TOTAL ==== ")
-	displayCount(counters.totalCount(), res)
+	displayBlockCount("TOTAL", counters.totalCount(), res)
 
 	return res.String()
+}
+
+func max(a, b int) int {
+	if a < b {
+		return b
+	}
+	return a
+}
+
+func displayBlockCount(title string, count countByProfile, res *bytes.Buffer) {
+	maxProfLen := -1
+	for profName := range count {
+		maxProfLen = max(maxProfLen, len(profName))
+	}
+
+	resTotal := &bytes.Buffer{}
+	l := displayCount(count, maxProfLen, resTotal)
+
+	title = fmt.Sprintf(" %s %s %s ", leftBraceStr, titleStyle.SetString(title), rightBraceStr)
+	if l > lipgloss.Width(title) {
+		title = lipgloss.NewStyle().Width(l).Align(lipgloss.Center).SetString(title).String()
+	}
+
+	fmt.Fprintln(res, title)
+	res.Write(resTotal.Bytes())
 }
 
 type ruleSorter struct {
@@ -52,7 +100,7 @@ type namedProfile struct {
 
 const minRuleNameLength = 6
 
-func displayCount(matched countByProfile, res *bytes.Buffer) {
+func displayCount(matched countByProfile, maxProfLen int, res *bytes.Buffer) int {
 	i := 0
 	np := make([]namedProfile, len(matched))
 	for profName, ruleMatch := range matched {
@@ -66,6 +114,8 @@ func displayCount(matched countByProfile, res *bytes.Buffer) {
 	sort.Slice(np, func(i, j int) bool {
 		return np[i].name < np[j].name
 	})
+
+	maxLen := -1
 
 	for j := range np {
 		profName, ruleMatch := np[j].name, np[j].ruleMatch
@@ -85,7 +135,10 @@ func displayCount(matched countByProfile, res *bytes.Buffer) {
 
 		sort.Sort(&rs)
 
-		profRow := profName + ": "
+		profRow := profName + " "
+		if len(profRow) < maxProfLen {
+			profRow += strings.Repeat(" ", maxProfLen-len(profRow)+1)
+		}
 		rulesRow := strings.Repeat(" ", len(profRow))
 
 		for l, rn := range rs.rulesNames {
@@ -95,10 +148,14 @@ func displayCount(matched countByProfile, res *bytes.Buffer) {
 			}
 
 			rulesRow += r
-			profRow += rs.counts[l] + strings.Repeat(" ", len(r)-len(rs.counts[l]))
+			profRow += numbersStyle.SetString(rs.counts[l]).String() + strings.Repeat(" ", len(r)-len(rs.counts[l]))
 		}
 
 		fmt.Fprintln(res, rulesRow)
 		fmt.Fprintln(res, profRow)
+
+		maxLen = max(maxLen, len(rulesRow))
 	}
+
+	return maxLen
 }

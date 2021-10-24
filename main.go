@@ -2,11 +2,8 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"os"
-	"reflect"
-
 	tea "github.com/charmbracelet/bubbletea"
+	"os"
 )
 
 type model struct {
@@ -14,6 +11,7 @@ type model struct {
 	countReady bool
 	data       *filesData
 	counters   lineCounters
+	verbose    bool
 }
 
 type parameters struct {
@@ -49,7 +47,7 @@ func (m model) Init() tea.Cmd {
 			}
 		}
 
-		log.Println(conf)
+		//log.Println(conf)
 
 		// Filter profiles
 		p.profs, err = filterProfiles(conf.Profiles, p.args.profileNames)
@@ -62,7 +60,7 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	log.Println(reflect.TypeOf(msg), msg)
+	//log.Println(reflect.TypeOf(msg), msg)
 
 	switch msg := msg.(type) {
 	case error:
@@ -71,7 +69,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case parameters:
 		var err error
 		// Processing files
-		m.data, err = processPatterns(msg.args.patterns, msg.args.isRecursive, msg.args.isDotFiles)
+		m.data, err = processPatterns(msg.args.patterns, msg.args.recursive, msg.args.dotFiles)
 		if err != nil {
 			m.err = fmt.Errorf("processing files: %w", err)
 			return m, tea.Quit
@@ -84,6 +82,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 
+		m.verbose = msg.args.verbose
 		m.countReady = true
 		return m, tea.Quit
 	case tea.KeyMsg:
@@ -103,7 +102,7 @@ func (m model) View() string {
 
 	if m.countReady {
 		// Displaying output
-		return displayCounts(m.data.usedFiles, m.data.skippedFiles, m.counters)
+		return displayCounts(m.data.usedFiles, m.data.skippedFiles, m.counters, m.verbose)
 	}
 
 	return ""
@@ -111,19 +110,19 @@ func (m model) View() string {
 
 func main() {
 	// Logging setup
-	f, err := tea.LogToFile("debug.log", "debug")
-	if err != nil {
-		fmt.Println("Fatal:", err)
-		os.Exit(1)
-	}
-	_ = f.Truncate(0)
+	//f, err := tea.LogToFile("debug.log", "debug")
+	//if err != nil {
+	//	fmt.Println("Fatal:", err)
+	//	os.Exit(1)
+	//}
+	//_ = f.Truncate(0)
 
 	// Program
-	if err = tea.NewProgram(&model{}).Start(); err != nil {
+	if err := tea.NewProgram(&model{}).Start(); err != nil {
 		fmt.Printf("Opss, something went really wrong: %v", err)
 		os.Exit(1)
 	}
 
 	// Closing log file
-	_ = f.Close()
+	//_ = f.Close()
 }
