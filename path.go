@@ -126,10 +126,13 @@ func absPathsFromPaths(paths []string) (absPaths []string, err error) {
 	return absPaths, nil
 }
 
-const dotPath = "/."
+const (
+	dotPath   = "/."
+	dotPrefix = "."
+)
 
 func isDotPath(path string) bool {
-	return strings.Contains(path, dotPath)
+	return strings.HasPrefix(path, dotPrefix) || strings.Contains(path, dotPath)
 }
 
 func excludeDotPaths(paths []string) []string {
