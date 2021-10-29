@@ -41,7 +41,7 @@ Displays count information based in profiles & rules specified.`,
 			isExecuting = true
 			cmdArgs = args
 		},
-		Version: "v1.0.3",
+		Version: "v1.0.4",
 	}
 
 	rootCmd.SetVersionTemplate(`{{printf "The-Line. Version %s" .Version}}

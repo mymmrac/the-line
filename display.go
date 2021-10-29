@@ -101,7 +101,7 @@ type namedProfile struct {
 	ruleMatch map[string]int
 }
 
-const minRuleNameLength = 6
+const minRuleNameLength = 10
 
 func displayCount(matched countByProfile, maxProfLen int, res *bytes.Buffer) int {
 	i := 0
