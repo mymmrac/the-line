@@ -31,6 +31,9 @@ func userConfig(configFilename string) (*config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("opening file: %w", err)
 	}
+	defer func() {
+		_ = configFile.Close()
+	}()
 
 	var conf config
 	err = yaml.NewDecoder(configFile).Decode(&conf)

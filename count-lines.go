@@ -27,6 +27,9 @@ func countLineInFile(path string, profs profiles) (*lineCounter, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open file: %w", err)
 	}
+	defer func() {
+		_ = file.Close()
+	}()
 
 	lc := newLineCounter(path)
 
