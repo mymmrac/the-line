@@ -38,8 +38,11 @@ func displayCounts(usedFiles, skippedFiles int, counters lineCounters, verbose b
 	fmt.Fprintln(res, crossStr+" Skipped", numbersStyle.SetString(strconv.Itoa(skippedFiles)))
 	fmt.Fprintln(res)
 
-	if verbose {
-		for _, counter := range counters {
+	for _, counter := range counters {
+		if counter.tooLongLine {
+			res.WriteString(fmt.Sprintf("%s: File %q has too long line (64K line limit)\n\n", lipgloss.NewStyle().Foreground(errorColor).SetString("WARN"), counter.filename))
+		}
+		if verbose {
 			displayBlockCount(counter.filename, counter.count, res)
 			fmt.Fprintln(res)
 		}

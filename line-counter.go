@@ -5,8 +5,9 @@ type countByRule map[string]int
 type countByProfile map[string]countByRule
 
 type lineCounter struct {
-	filename string
-	count    countByProfile
+	filename    string
+	count       countByProfile
+	tooLongLine bool
 }
 
 func newLineCounter(filename string) *lineCounter {

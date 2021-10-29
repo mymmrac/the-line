@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"os"
 
 	"golang.org/x/tools/godoc/util"
@@ -37,6 +39,9 @@ func isTextFile(filename string) (bool, error) {
 	var buf [1024]byte
 	n, err := file.Read(buf[:])
 	if err != nil {
+		if errors.Is(err, io.EOF) {
+			return false, nil
+		}
 		return false, fmt.Errorf("read file: %w", err)
 	}
 

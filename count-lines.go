@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 )
@@ -37,7 +38,12 @@ func countLineInFile(path string, profs profiles) (*lineCounter, error) {
 	}
 
 	if err = sc.Err(); err != nil {
-		return nil, fmt.Errorf("scan file: %w", err)
+		if errors.Is(err, bufio.ErrTooLong) {
+			lc.tooLongLine = true
+			return lc, nil
+		}
+
+		return nil, fmt.Errorf("scan file %q: %w", path, err)
 	}
 
 	return lc, nil

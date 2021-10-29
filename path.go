@@ -61,8 +61,12 @@ func filesFromPaths(paths []string, recursive, dotFiles bool) (files []string, e
 	if recursive && len(dirs) > 0 {
 		for _, dir := range dirs {
 			err = filepath.Walk(dir, func(path string, info fs.FileInfo, err error) error {
+				if !dotFiles && isDotPath(path) {
+					return nil
+				}
+
 				if err != nil {
-					return fmt.Errorf("file walk: %w", err)
+					return fmt.Errorf("file walk: {%s} %w", dirs, err)
 				}
 
 				if !info.IsDir() {
@@ -84,7 +88,7 @@ func filesFromPaths(paths []string, recursive, dotFiles bool) (files []string, e
 	}
 
 	if !dotFiles {
-		files = excludeDotFiles(files)
+		files = excludeDotPaths(files)
 	}
 
 	return files, nil
@@ -122,13 +126,17 @@ func absPathsFromPaths(paths []string) (absPaths []string, err error) {
 	return absPaths, nil
 }
 
-const dotFile = "/."
+const dotPath = "/."
 
-func excludeDotFiles(paths []string) []string {
+func isDotPath(path string) bool {
+	return strings.Contains(path, dotPath)
+}
+
+func excludeDotPaths(paths []string) []string {
 	var excluded []string
 
 	for _, path := range paths {
-		if !strings.Contains(path, dotFile) {
+		if !isDotPath(path) {
 			excluded = append(excluded, path)
 		}
 	}
